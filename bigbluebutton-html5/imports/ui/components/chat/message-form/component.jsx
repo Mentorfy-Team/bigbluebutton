@@ -276,8 +276,8 @@ class MessageForm extends PureComponent {
     this.setState(
       {
         message: message.slice(0, cursor)
-          + emojiObject.native
-          + message.slice(cursor),
+        + emojiObject.native
+        + message.slice(cursor),
       },
     );
 

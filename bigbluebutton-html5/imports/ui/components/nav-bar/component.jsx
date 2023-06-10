@@ -58,7 +58,7 @@ class NavBar extends Component {
     super(props);
 
     this.state = {
-      acs: props.activeChats,
+        acs: props.activeChats,
     }
 
     this.handleToggleUserList = this.handleToggleUserList.bind(this);
@@ -105,7 +105,7 @@ class NavBar extends Component {
 
   componentDidUpdate(prevProps, prevState) {
     if (!_.isEqual(prevProps.activeChats, this.props.activeChats)) {
-      this.setState({ acs: this.props.activeChats })
+      this.setState({ acs: this.props.activeChats})
     }
   }
 
@@ -211,26 +211,9 @@ class NavBar extends Component {
       >
         <Styled.Top>
           <Styled.Left>
-            <SettingsDropdownContainer amIModerator={amIModerator} />
-            {ConnectionStatusService.isEnabled() ? <ConnectionStatusButton /> : null}
-          </Styled.Left>
-          <Styled.Center>
-            <Styled.PresentationTitle data-test="presentationTitle">
-              {presentationTitle}
-            </Styled.PresentationTitle>
-            <RecordingIndicator
-              mountModal={mountModal}
-              getModal={getModal}
-              amIModerator={amIModerator}
-              currentUserId={currentUserId}
-            />
-          </Styled.Center>
-          <Styled.Right>
-
-
-            {isExpanded && document.dir === 'rtl'
+            {isExpanded && document.dir === 'ltr'
               && <Styled.ArrowLeft iconName="left_arrow" />}
-            {!isExpanded && document.dir === 'ltr'
+            {!isExpanded && document.dir === 'rtl'
               && <Styled.ArrowLeft iconName="left_arrow" />}
             <Styled.NavbarToggleButton
               onClick={this.handleToggleUserList}
@@ -247,10 +230,25 @@ class NavBar extends Component {
               accessKey={TOGGLE_USERLIST_AK}
               hasNotification={hasNotification}
             />
-            {!isExpanded && document.dir === 'rtl'
+            {!isExpanded && document.dir === 'ltr'
               && <Styled.ArrowRight iconName="right_arrow" />}
-            {isExpanded && document.dir === 'ltr'
+            {isExpanded && document.dir === 'rtl'
               && <Styled.ArrowRight iconName="right_arrow" />}
+          </Styled.Left>
+          <Styled.Center>
+            <Styled.PresentationTitle data-test="presentationTitle">
+              {presentationTitle}
+            </Styled.PresentationTitle>
+            <RecordingIndicator
+              mountModal={mountModal}
+              getModal={getModal}
+              amIModerator={amIModerator}
+              currentUserId={currentUserId}
+            />
+          </Styled.Center>
+          <Styled.Right>
+            {ConnectionStatusService.isEnabled() ? <ConnectionStatusButton /> : null}
+            <SettingsDropdownContainer amIModerator={amIModerator} />
           </Styled.Right>
         </Styled.Top>
         <Styled.Bottom>

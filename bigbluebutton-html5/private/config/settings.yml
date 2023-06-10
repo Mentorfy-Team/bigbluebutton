@@ -11,13 +11,13 @@ public:
     listenOnlyMode: true
     forceListenOnly: false
     # Skips the echo test when connecting with microphone.
-    skipCheck: true
+    skipCheck: false
     # Skips the echo test when connecting with microphone right after user
     # joins the room the first time. Subsequent joins to microphone won't
     # have echo test skipped, for example if user leaves and joins the mic
     # again or reloading page and joining mic again.
     # This setting won't have effect if skipCheck = true
-    skipCheckOnJoin: true
+    skipCheckOnJoin: false
     #
     # Allow users to change microphone/speaker dynamically
     # The device is changed immediately, without the need to rejoin
@@ -26,16 +26,16 @@ public:
     # "media.setsinkid.enabled" to make it work properly
     # enableDynamicAudioDeviceSelection: true
     #
-    clientTitle: Meeting Mentorfy
-    appName: Meeting Mentorfy HTML5 Client
+    clientTitle: BigBlueButton
+    appName: BigBlueButton HTML5 Client
     bbbServerVersion: HTML5_FULL_BBB_VERSION
     displayBbbServerVersion: true
-    copyright: '©2023 Mentorfy LTDA.'
+    copyright: '©2023 BigBlueButton Inc.'
     html5ClientBuild: HTML5_CLIENT_VERSION
-    helpLink: https://mentorfy.io/
+    helpLink: https://bigbluebutton.org/html5/
     delayForUnmountOfSharedNote: 120000
     bbbTabletApp:
-      enabled: false
+      enabled: true
       iosAppStoreUrl: 'https://apps.apple.com/us/app/bigbluebutton-tablet/id1641156756'
       iosAppUrlScheme: 'bigbluebutton-tablet'
     lockOnJoin: true
@@ -73,7 +73,7 @@ public:
     enableWebcamSelectorButton: true
     enableTalkingIndicator: true
     enableCameraBrightness: true
-    mirrorOwnWebcam: true
+    mirrorOwnWebcam: false
     viewersInWebcam: 8
     ipv4FallbackDomain: ''
     allowLogout: true
@@ -85,9 +85,9 @@ public:
     # speech API, which involves sending voice data to third-party servers!
     # https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API/Using_the_Web_Speech_API#speech_recognition
     audioCaptions:
-      enabled: true
+      enabled: false
       # mobile: <Boolean> - controls speech transcription availability on mobile
-      mobile: true
+      mobile: false
       language:
         available:
         # - de-DE
@@ -102,7 +102,7 @@ public:
         # - zh-CN
         # If true, automatically uses the below locale field content as transcription language
         # and the language selector in audio modal won't show up!
-        forceLocale: true
+        forceLocale: false
         # If true, the default selected value for language selector in audio modal
         # is the below locale field content
         defaultSelectLocale: true
@@ -110,7 +110,7 @@ public:
         # browserLanguage: to set browser language
         # [en-US, es-ES, pt-BR,...]: to set a specific locale
         # disabled: to set disabled
-        locale: pt-BR
+        locale: disabled
     mutedAlert:
       enabled: true
       interval: 200
@@ -177,7 +177,7 @@ public:
         guestWaitingPushAlerts: true
         paginationEnabled: true
         whiteboardToolbarAutoHide: false
-        darkTheme: true
+        darkTheme: false
         # fallbackLocale: if the locale the client is loaded in does not have a
         # translation a string, it will use the translation from the locale
         # specified in fallbackLocale. Note that fallbackLocale should be a
@@ -264,7 +264,7 @@ public:
   externalVideoPlayer:
     enabled: true
   kurento:
-    wsUrl: wss://meeting.mentorfy.io/bbb-webrtc-sfu
+    wsUrl: HOST
     cameraWsOptions:
       # Valid for video-provider. Time (ms) before its WS connection times out
       # and tries to reconnect.
@@ -403,9 +403,9 @@ public:
     # Default is undefined, which means the default setting in bbb-webrtc-sfu
     # prevails (videoMediaServer).
     #videoMediaServer: Kurento
-    autoShareWebcam: true
-    skipVideoPreview: true
-    skipVideoPreviewOnFirstJoin: true
+    autoShareWebcam: false
+    skipVideoPreview: false
+    skipVideoPreviewOnFirstJoin: false
     # cameraSortingModes.paginationSorting: sorting mode to be applied when pagination is active
     # cameraSortingModes.defaultSorting: sorting mode when pagination is not active (full mesh)
     # Current implemented modes are:
@@ -539,12 +539,10 @@ public:
     typingIndicator:
       enabled: true
     moderatorChatEmphasized: true
-    autoConvertEmoji: false
-    chatGPT:
-      secret:  
+    autoConvertEmoji: true
     emojiPicker:
       enable: false
-      frequentEmojiSortOnClick: true
+      frequentEmojiSortOnClick: false
     # e.g.: disableEmojis: ['1F595','1F922']
     disableEmojis: []
   notes:
@@ -552,12 +550,12 @@ public:
     id: notes
     pinnable: true
   layout:
-    hidePresentationOnJoin: true
+    hidePresentationOnJoin: false
     showParticipantsOnLogin: true
     showPushLayoutButton: true
     showPushLayoutToggle: true
   pads:
-    url: https://meeting.mentorfy.io/pad
+    url: ETHERPAD_HOST
     cookie:
       path: /
       sameSite: None
@@ -747,6 +745,8 @@ public:
         mime: image/jpeg
       - extension: .png
         mime: image/png
+      - extension: .webp
+        mime: image/webp
   selectRandomUser:
     enabled: true
     countdown: false
@@ -761,6 +761,7 @@ public:
   whiteboard:
     annotationsQueueProcessInterval: 60
     cursorInterval: 150
+    pointerDiameter: 5
     maxStickyNoteLength: 1000
     # limit number of annotations per slide
     maxNumberOfAnnotations: 300

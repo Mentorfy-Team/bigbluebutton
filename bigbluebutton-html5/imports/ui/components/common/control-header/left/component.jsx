@@ -11,7 +11,7 @@ class Left extends Component {
     return (
       <Styled.HideButton
         className="buttonWrapper"
-        icon="right_arrow"
+        icon="left_arrow"
         tabIndex={0}
         {...this.props}
       />

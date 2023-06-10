@@ -5,7 +5,6 @@ import Styled from './styles';
 import ActionsDropdown from './actions-dropdown/container';
 import AudioCaptionsButtonContainer from '/imports/ui/components/audio/captions/button/container';
 import ScreenshareButtonContainer from '/imports/ui/components/actions-bar/screenshare/container';
-import LogoutButtonContainer from '/imports/ui/components/actions-bar/logout/container';
 import AudioControlsContainer from '../audio/audio-controls/container';
 import JoinVideoOptionsContainer from '../video-provider/video-button/container';
 import PresentationOptionsContainer from './presentation-options/component';
@@ -42,8 +41,8 @@ class ActionsBar extends PureComponent {
       setPushLayout,
     } = this.props;
 
-    const shouldShowOptionsButton = (isPresentationEnabled() && isThereCurrentPresentation)
-      || isSharingVideo || hasScreenshare || isSharedNotesPinned;
+    const shouldShowOptionsButton = (isPresentationEnabled() && isThereCurrentPresentation) 
+                                    || isSharingVideo || hasScreenshare || isSharedNotesPinned;
     return (
       <Styled.ActionsBar
         style={
@@ -52,7 +51,7 @@ class ActionsBar extends PureComponent {
           }
         }
       >
-        <Styled.Center>
+        <Styled.Left>
           <ActionsDropdown {...{
             amIPresenter,
             amIModerator,
@@ -75,11 +74,13 @@ class ActionsBar extends PureComponent {
               <CaptionsButtonContainer {...{ intl }} />
             )
             : null}
-          {!deviceInfo.isMobile
+          { !deviceInfo.isMobile
             ? (
               <AudioCaptionsButtonContainer />
             )
-            : null}
+            : null }
+        </Styled.Left>
+        <Styled.Center>
           <AudioControlsContainer />
           {enableVideo
             ? (
@@ -91,8 +92,9 @@ class ActionsBar extends PureComponent {
             isMeteorConnected,
           }}
           />
-
-          {shouldShowOptionsButton ?
+        </Styled.Center>
+        <Styled.Right>
+          { shouldShowOptionsButton ?
             <PresentationOptionsContainer
               presentationIsOpen={presentationIsOpen}
               setPresentationIsOpen={setPresentationIsOpen}
@@ -114,13 +116,7 @@ class ActionsBar extends PureComponent {
               }
               />
             ) : null}
-
-          <LogoutButtonContainer {...{
-            amIPresenter,
-            isMeteorConnected,
-          }}
-          />
-        </Styled.Center>
+        </Styled.Right>
       </Styled.ActionsBar>
     );
   }

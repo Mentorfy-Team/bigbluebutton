@@ -1,7 +1,6 @@
 {
     "app.home.greeting": "Sua apresentação começará em breve...",
     "app.chat.submitLabel": "Enviar mensagem",
-    "app.chat.gptLabel": "Perguntar ao Chat GPT",
     "app.chat.loading": "Mensagens de bate-papo carregadas: {0}%",
     "app.chat.errorMaxMessageLength": "Mensagem com {0} caracter(es) em excesso",
     "app.chat.disconnected": "Você está desconectado, as mensagens não podem ser enviadas",
