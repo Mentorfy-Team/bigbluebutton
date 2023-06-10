@@ -546,8 +546,6 @@ class App extends Component {
           <ScreenReaderAlertContainer />
           <BannerBarContainer />
           <NotificationsBarContainer />
-          <SidebarNavigationContainer />
-          <SidebarContentContainer isSharedNotesPinned={shouldShowSharedNotes} />
           <NavBarContainer main="new" />
           <NewWebcamContainer isLayoutSwapped={!presentationIsOpen} />
           <Styled.TextMeasure id="text-measure" />
@@ -565,6 +563,7 @@ class App extends Component {
                 layoutType={selectedLayout}
               />
             ) : null}
+          
           {this.renderCaptions()}
           <AudioCaptionsSpeechContainer />
           {this.renderAudioCaptions()}
@@ -588,6 +587,8 @@ class App extends Component {
           {this.renderActionsBar()}
           {customStyleUrl ? <link rel="stylesheet" type="text/css" href={customStyleUrl} /> : null}
           {customStyle ? <link rel="stylesheet" type="text/css" href={`data:text/css;charset=UTF-8,${encodeURIComponent(customStyle)}`} /> : null}
+          <SidebarNavigationContainer />
+          <SidebarContentContainer isSharedNotesPinned={shouldShowSharedNotes} />
         </Styled.Layout>
       </>
     );

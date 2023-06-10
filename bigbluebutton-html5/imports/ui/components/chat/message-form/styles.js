@@ -85,6 +85,21 @@ const SendButton = styled(Button)`
   }
 `;
 
+const GPTButton = styled(Button)`
+  margin:0 0 0 ${smPaddingX};
+  align-self: center;
+  font-size: 0.9rem;
+
+  [dir="rtl"]  & {
+    margin: 0 ${smPaddingX} 0 0;
+    -webkit-transform: scale(-1, 1);
+    -moz-transform: scale(-1, 1);
+    -ms-transform: scale(-1, 1);
+    -o-transform: scale(-1, 1);
+    transform: scale(-1, 1);
+  }
+`;
+
 const EmojiButtonWrapper = styled.div``;
 
 const EmojiButton = styled(Button)`
@@ -127,6 +142,7 @@ export default {
   Wrapper,
   Input,
   SendButton,
+  GPTButton,
   EmojiButton,
   EmojiButtonWrapper,
   EmojiPicker,
