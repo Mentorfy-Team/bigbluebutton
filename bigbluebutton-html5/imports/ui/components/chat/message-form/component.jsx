@@ -28,6 +28,10 @@ const propTypes = {
 };
 
 const messages = defineMessages({
+  gptLabel: {
+    id: 'app.chat.gptLabel',
+    description: 'Gpt button label',
+  },
   submitLabel: {
     id: 'app.chat.submitLabel',
     description: 'Chat submit button label',
@@ -272,8 +276,8 @@ class MessageForm extends PureComponent {
     this.setState(
       {
         message: message.slice(0, cursor)
-        + emojiObject.native
-        + message.slice(cursor),
+          + emojiObject.native
+          + message.slice(cursor),
       },
     );
 
