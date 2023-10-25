@@ -12,11 +12,16 @@ import {
   layoutDispatch,
 } from '../layout/context';
 import WebcamComponent from '/imports/ui/components/webcam/component';
+import { LAYOUT_TYPE } from '../layout/enums';
+import { sortVideoStreams } from '/imports/ui/components/video-provider/stream-sorting';
+
+const { defaultSorting: DEFAULT_SORTING } = Meteor.settings.public.kurento.cameraSortingModes;
 
 const WebcamContainer = ({
   audioModalIsOpen,
   swapLayout,
   usersVideo,
+  layoutType,
 }) => {
   const fullscreen = layoutSelect((i) => i.fullscreen);
   const isRTL = layoutSelect((i) => i.isRTL);
@@ -33,8 +38,10 @@ const WebcamContainer = ({
   const { users } = usingUsersContext;
   const currentUser = users[Auth.meetingID][Auth.userID];
 
+  const isGridEnabled = layoutType === LAYOUT_TYPE.VIDEO_FOCUS;
+
   return !audioModalIsOpen
-    && usersVideo.length > 0
+    && (usersVideo.length > 0 || isGridEnabled)
     ? (
       <WebcamComponent
         {...{
@@ -48,6 +55,7 @@ const WebcamContainer = ({
           isPresenter: currentUser.presenter,
           displayPresentation,
           isRTL,
+          isGridEnabled,
         }}
       />
     )
@@ -61,8 +69,14 @@ export default withTracker((props) => {
     isMeteorConnected: Meteor.status().connected,
   };
 
-  const { streams: usersVideo } = VideoService.getVideoStreams();
-  data.usersVideo = usersVideo;
+  const { streams: usersVideo, gridUsers } = VideoService.getVideoStreams();
+
+  if(gridUsers.length > 0) {
+    const items = usersVideo.concat(gridUsers);
+    data.usersVideo = sortVideoStreams(items, DEFAULT_SORTING);
+  } else {
+    data.usersVideo = usersVideo;
+  }
   data.swapLayout = !hasPresentation || props.isLayoutSwapped;
 
   if (data.swapLayout) {

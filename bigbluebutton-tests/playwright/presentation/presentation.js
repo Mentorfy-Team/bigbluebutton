@@ -8,6 +8,8 @@ const { sleep } = require('../core/helpers');
 const { getSettings } = require('../core/settings');
 const { waitAndClearDefaultPresentationNotification, waitAndClearNotification } = require('../notifications/util');
 
+const defaultZoomLevel = '100%';
+
 class Presentation extends MultiUsers {
   constructor(browser, context) {
     super(browser, context);
@@ -64,10 +66,11 @@ class Presentation extends MultiUsers {
   async uploadSinglePresentationTest() {
     await this.modPage.waitForSelector(e.whiteboard, ELEMENT_WAIT_LONGER_TIME);
     await this.modPage.waitForSelector(e.skipSlide);
+    await this.modPage.wasRemoved(e.smallToastMsg, ELEMENT_WAIT_EXTRA_LONG_TIME);
     await uploadSinglePresentation(this.modPage, e.pdfFileName, UPLOAD_PDF_WAIT_TIME);
 
     // wait until the notifications disappear
-    await this.modPage.wasRemoved(e.presentationStatusInfo, ELEMENT_WAIT_LONGER_TIME);
+    await this.modPage.waitAndClick(e.smallToastMsg);
     await this.modPage.wasRemoved(e.smallToastMsg, ELEMENT_WAIT_LONGER_TIME);
     await this.userPage.wasRemoved(e.presentationStatusInfo);
     await this.userPage.wasRemoved(e.smallToastMsg);
@@ -79,6 +82,50 @@ class Presentation extends MultiUsers {
     
     const userWhiteboardLocator = this.userPage.getLocator(e.whiteboard);
     await expect(userWhiteboardLocator).toHaveScreenshot('viewer-new-presentation-screenshot.png', {
+      maxDiffPixels: 1000,
+    });
+  }
+
+  async uploadOtherPresentationsFormat() {
+    await uploadSinglePresentation(this.modPage, e.uploadPresentationFileName, UPLOAD_PDF_WAIT_TIME);
+    await this.modPage.waitAndClick(e.smallToastMsg);
+    await this.modPage.wasRemoved(e.smallToastMsg, ELEMENT_WAIT_LONGER_TIME);
+    await this.userPage.wasRemoved(e.presentationStatusInfo);
+    await this.userPage.wasRemoved(e.smallToastMsg);
+
+    const modWhiteboardLocator = this.modPage.getLocator(e.whiteboard);
+    const userWhiteboardLocator = this.userPage.getLocator(e.whiteboard);
+
+    await expect(modWhiteboardLocator).toHaveScreenshot('moderator-png-presentation-screenshot.png', {
+      maxDiffPixels: 1000,
+    });
+    await expect(userWhiteboardLocator).toHaveScreenshot('viewer-png-presentation-screenshot.png', {
+      maxDiffPixels: 1000,
+    });
+
+    await uploadSinglePresentation(this.modPage, e.presentationPPTX, UPLOAD_PDF_WAIT_TIME);
+    await this.modPage.waitAndClick(e.smallToastMsg);
+    await this.modPage.wasRemoved(e.smallToastMsg, ELEMENT_WAIT_LONGER_TIME);
+    await this.userPage.wasRemoved(e.presentationStatusInfo);
+    await this.userPage.wasRemoved(e.smallToastMsg);
+
+    await expect(modWhiteboardLocator).toHaveScreenshot('moderator-pptx-presentation-screenshot.png', {
+      maxDiffPixels: 1000,
+    });
+    await expect(userWhiteboardLocator).toHaveScreenshot('viewer-pptx-presentation-screenshot.png', {
+      maxDiffPixels: 1000,
+    });
+
+    await uploadSinglePresentation(this.modPage, e.presentationTXT, UPLOAD_PDF_WAIT_TIME);
+    await this.modPage.waitAndClick(e.smallToastMsg);
+    await this.modPage.wasRemoved(e.smallToastMsg, ELEMENT_WAIT_LONGER_TIME);
+    await this.userPage.wasRemoved(e.presentationStatusInfo);
+    await this.userPage.wasRemoved(e.smallToastMsg);
+
+    await expect(modWhiteboardLocator).toHaveScreenshot('moderator-txt-presentation-screenshot.png', {
+      maxDiffPixels: 1000,
+    });
+    await expect(userWhiteboardLocator).toHaveScreenshot('viewer-txt-presentation-screenshot.png', {
       maxDiffPixels: 1000,
     });
   }
@@ -102,24 +149,64 @@ class Presentation extends MultiUsers {
   async fitToWidthTest() {
     await this.modPage.waitForSelector(e.whiteboard, ELEMENT_WAIT_LONGER_TIME);
     await this.modPage.waitAndClick(e.userListToggleBtn);
-    await uploadSinglePresentation(this.modPage, e.uploadPresentationFileName);
     const width1 = (await this.modPage.getElementBoundingBox(e.whiteboard)).width;
+    // check if its off
+    const fitToWidthButtonLocator = this.modPage.getLocator(`${e.fitToWidthButton} > span>>nth=0`);
+    const fitToWidthBorderColorOff = await fitToWidthButtonLocator.evaluate((elem) => getComputedStyle(elem).borderColor);
+    await expect(fitToWidthBorderColorOff).toBe('rgba(0, 0, 0, 0)');
+
     await this.modPage.waitAndClick(e.fitToWidthButton);
+    await sleep(500);
+
+    //check if its on
+    const fitToWidthBorderColorOn = await fitToWidthButtonLocator.evaluate((elem) => getComputedStyle(elem).borderColor);
+    await expect(fitToWidthBorderColorOn).toBe('rgb(6, 23, 42)');
+
     const width2 = (await this.modPage.getElementBoundingBox(e.whiteboard)).width;
-    await expect(Number(width2) > Number(width1)).toBeTruthy();
+    await expect(Number(width2)).toBeGreaterThan(Number(width1));
   }
 
-  async downloadPresentation(testInfo) {
-    const { presentationDownloadable } = getSettings();
-    test.fail(!presentationDownloadable, 'Presentation download is disable');
+  async enableAndDisablePresentationDownload(testInfo) {
+    const { originalPresentationDownloadable } = getSettings();
+    test.fail(!originalPresentationDownloadable, 'Presentation download is disable');
+
+    await this.modPage.waitForSelector(e.whiteboard, ELEMENT_WAIT_LONGER_TIME);
+    // enable original presentation download
+    await this.modPage.waitAndClick(e.actions);
+    await this.modPage.waitAndClick(e.managePresentations);
+    await this.modPage.waitAndClick(e.presentationOptionsDownloadBtn);
+    await this.modPage.waitAndClick(e.enableOriginalPresentationDownloadBtn);
+    await this.userPage.hasElement(e.smallToastMsg);
+    await this.userPage.hasElement(e.presentationDownloadBtn);
+    await this.userPage.waitForSelector(e.whiteboard);
+    await this.userPage.hasElement(e.presentationDownloadBtn);
+    /**
+     * the following steps throwing "Error: ENOENT: no such file or directory" at the end of execution
+     * due to somehow it's trying to take the screenshot of the tab that opened for the file download
+     */
+    //! await this.modPage.handleDownload(this.modPage.getLocator(e.presentationDownloadBtn), testInfo);
+    //! await this.userPage.handleDownload(this.userPage.getLocator(e.presentationDownloadBtn), testInfo);
+    // disable original presentation download
+    await this.modPage.waitAndClick(e.actions);
+    await this.modPage.waitAndClick(e.managePresentations);
+    await this.modPage.waitAndClick(e.presentationOptionsDownloadBtn);
+    await this.modPage.waitAndClick(e.disableOriginalPresentationDownloadBtn);
+    await this.modPage.hasElement(e.whiteboard);
+    await this.modPage.wasRemoved(e.presentationDownloadBtn);
+    await this.userPage.wasRemoved(e.presentationDownloadBtn);
+  }
+
+  async sendPresentationToDownload(testInfo) {
+    const { presentationWithAnnotationsDownloadable } = getSettings();
+    test.fail(!presentationWithAnnotationsDownloadable, 'Presentation download is disable');
 
     await this.modPage.waitForSelector(e.whiteboard, ELEMENT_WAIT_LONGER_TIME);
     await this.modPage.waitAndClick(e.actions);
     await this.modPage.waitAndClick(e.managePresentations);
-    await this.modPage.waitAndClick(e.exportPresentationToPublicChat);
-    await this.userPage.hasElement(e.smallToastMsg);
-    await this.userPage.hasElement(e.toastDownload);
-    await this.userPage.waitForSelector(e.whiteboard, ELEMENT_WAIT_LONGER_TIME);
+    await this.modPage.waitAndClick(e.presentationOptionsDownloadBtn);
+    await this.modPage.waitAndClick(e.sendPresentationInCurrentStateBtn);
+    await this.modPage.hasElement(e.downloadPresentationToast);
+    await this.modPage.hasElement(e.smallToastMsg, ELEMENT_WAIT_EXTRA_LONG_TIME);
     await this.userPage.hasElement(e.downloadPresentation, ELEMENT_WAIT_EXTRA_LONG_TIME);
     const downloadPresentationLocator = this.userPage.getLocator(e.downloadPresentation);
     await this.userPage.handleDownload(downloadPresentationLocator, testInfo);
@@ -139,7 +226,6 @@ class Presentation extends MultiUsers {
   }
 
   async uploadAndRemoveAllPresentations() {
-    await waitAndClearDefaultPresentationNotification(this.modPage);
     await uploadSinglePresentation(this.modPage, e.uploadPresentationFileName);
 
     const modSlides1 = await getSlideOuterHtml(this.modPage);
@@ -221,10 +307,65 @@ class Presentation extends MultiUsers {
 
   async presentationSnapshot(testInfo) {
     await this.modPage.waitForSelector(e.whiteboard, ELEMENT_WAIT_LONGER_TIME);
-    await waitAndClearNotification(this.modPage);
     await this.modPage.waitAndClick(e.whiteboardOptionsButton);
     const presentationSnapshotLocator = this.modPage.getLocator(e.presentationSnapshot);
     await this.modPage.handleDownload(presentationSnapshotLocator, testInfo);
+  }
+
+  async hidePresentationToolbar() {
+    await this.modPage.waitAndClick(e.whiteboardOptionsButton);
+    await this.modPage.waitAndClick(e.toolVisibility);
+    await this.modPage.wasRemoved(e.wbToolbar);
+    await this.modPage.wasRemoved(e.wbStyles);
+    await this.modPage.wasRemoved(e.wbUndo);
+    await this.modPage.wasRemoved(e.wbRedo);
+  }
+
+  async zoom() {
+    await this.modPage.waitForSelector(e.resetZoomButton, ELEMENT_WAIT_LONGER_TIME);
+
+    const wbBox = await this.modPage.getLocator(e.whiteboard);
+
+    const zoomOutButtonLocator = this.modPage.getLocator(e.zoomOutButton);
+    await expect(zoomOutButtonLocator).toBeDisabled();
+    const resetZoomButtonLocator = this.modPage.getLocator(e.resetZoomButton);
+    await expect(resetZoomButtonLocator).toContainText(defaultZoomLevel);
+
+    //Zoom In 150%
+    await this.modPage.waitAndClick(e.zoomInButton);
+    await expect(zoomOutButtonLocator).toBeEnabled();
+    await expect(resetZoomButtonLocator).toContainText(/125%/);
+    await this.modPage.waitAndClick(e.zoomInButton);
+    await expect(resetZoomButtonLocator).toContainText(/150%/);
+    await expect(wbBox).toHaveScreenshot('moderator1-zoom150.png');
+
+    //Zoom out 125%
+    await this.modPage.waitAndClick(e.zoomOutButton);
+    await expect(resetZoomButtonLocator).toContainText(/125%/);
+    await expect(wbBox).toHaveScreenshot('moderator1-zoom125.png');
+
+    //Reset Zoom 100%
+    await this.modPage.waitAndClick(e.zoomInButton);
+    await expect(resetZoomButtonLocator).toContainText(/150%/);
+    await this.modPage.waitAndClick(e.resetZoomButton);
+    await expect(resetZoomButtonLocator).toContainText(/100%/);
+    await expect(zoomOutButtonLocator).toBeDisabled();
+    await expect(wbBox).toHaveScreenshot('moderator1-zoom100.png');
+  }
+
+  async selectSlide() {
+    await this.modPage.waitForSelector(e.skipSlide);
+
+    const wbBox = await this.modPage.getLocator(e.whiteboard);
+
+    await this.modPage.selectSlide('Slide 10');
+    await expect(wbBox).toHaveScreenshot('moderator1-select-slide10.png');
+
+    await this.modPage.selectSlide('Slide 5');
+    await expect(wbBox).toHaveScreenshot('moderator1-select-slide5.png');
+
+    await this.modPage.selectSlide('Slide 13');
+    await expect(wbBox).toHaveScreenshot('moderator1-select-slide13.png');
   }
 }
 

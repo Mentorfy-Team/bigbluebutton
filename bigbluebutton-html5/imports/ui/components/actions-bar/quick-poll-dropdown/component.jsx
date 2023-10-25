@@ -137,7 +137,7 @@ const QuickPollDropdown = (props) => {
       itemLabel = itemLabel?.replace(/\s+/g, '').toUpperCase();
 
       const numChars = {
-        1: 'A', 2: 'B', 3: 'C', 4: 'D', 5: 'E',
+        1: 'A', 2: 'B', 3: 'C', 4: 'D', 5: 'E', 6: 'F', 7: 'G'
       };
       itemLabel = itemLabel.split('').map((c) => {
         if (numChars[c]) return numChars[c];
@@ -209,7 +209,7 @@ const QuickPollDropdown = (props) => {
 
         setTimeout(() => {
           handleClickQuickPoll(layoutContextDispatch);
-          if (singlePollType === 'R-' || singlePollType === 'TF') {
+          if (singlePollType === 'R-' || singlePollType === 'TF' || singlePollType === 'YN') {
             startPoll(singlePollType, currentSlide.id, answers, pollQuestion, multiResponse);
           } else {
             startPoll(
@@ -224,6 +224,7 @@ const QuickPollDropdown = (props) => {
       }}
       size="lg"
       data-test="quickPollBtn"
+      color="primary"
     />
   );
 
@@ -238,6 +239,7 @@ const QuickPollDropdown = (props) => {
         tooltipLabel={intl.formatMessage(intlMessages.quickPollLabel)}
         onClick={() => null}
         size="lg"
+        data-test="yesNoQuickPoll"
       />
     );
 

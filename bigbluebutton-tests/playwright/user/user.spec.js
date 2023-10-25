@@ -10,7 +10,7 @@ const iPhone11 = devices['iPhone 11'];
 test.describe.parallel('User', () => {
   test.describe.parallel('Actions', () => {
     // https://docs.bigbluebutton.org/2.6/release-tests.html#set-status--raise-hand-automated
-    test('Raise and lower Hand Toast', async ({ browser, context, page }) => {
+    test('Raise and lower Hand', async ({ browser, context, page }) => {
       const multiusers = new MultiUsers(browser, context);
       await multiusers.initModPage(page, true);
       await multiusers.raiseAndLowerHand();
@@ -71,14 +71,14 @@ test.describe.parallel('User', () => {
       await multiusers.demoteToViewer();
     });
 
-    test('Give and remove whiteboard access', async ({ browser, context, page }) => {
+    test('Give and remove whiteboard access @ci', async ({ browser, context, page }) => {
       const multiusers = new MultiUsers(browser, context);
       await multiusers.initModPage(page);
       await multiusers.initModPage2();
       await multiusers.giveAndRemoveWhiteboardAccess();
     });
 
-    test('Remove user', async ({ browser, context, page }) => {
+    test('Remove user @ci', async ({ browser, context, page }) => {
       const multiusers = new MultiUsers(browser, context);
       await multiusers.initModPage(page, true);
       await multiusers.initModPage2(true);
@@ -88,14 +88,14 @@ test.describe.parallel('User', () => {
     test('Remove user and prevent rejoining', async ({ browser, context, page }) => {
       const multiusers = new MultiUsers(browser, context);
       await multiusers.initModPage(page, true);
-      await multiusers.initModPage2(true, context, { customParameter: 'userID=Moderator2' });
+      await multiusers.initModPage2(true, context, { joinParameter: 'userID=Moderator2' });
       await multiusers.removeUserAndPreventRejoining(context);
     });
   });
 
   test.describe.parallel('Manage', () => {
     test.describe.parallel('Guest policy', () => {
-      test.describe.parallel('ASK_MODERATOR', () => {
+      test.describe.parallel('ASK_MODERATOR @ci', () => {
         // https://docs.bigbluebutton.org/2.6/release-tests.html#ask-moderator
         test('Message to guest lobby', async ({ browser, context, page }) => {
           const guestPolicy = new GuestPolicy(browser, context);
@@ -119,7 +119,7 @@ test.describe.parallel('User', () => {
           await guestPolicy.rememberChoice();
         });
 
-        test.describe.parallel('Actions to specific pending user', () => {
+        test.describe.parallel('Actions to specific pending user @ci', () => {
           test('Message', async ({ browser, context, page }) => {
             const guestPolicy = new GuestPolicy(browser, context);
             await guestPolicy.initModPage(page);
@@ -146,7 +146,7 @@ test.describe.parallel('User', () => {
         await guestPolicy.alwaysAccept();
       });
       // https://docs.bigbluebutton.org/2.6/release-tests.html#always-deny
-      test('ALWAYS_DENY', async ({ browser, context, page }) => {
+      test('ALWAYS_DENY @ci', async ({ browser, context, page }) => {
         const guestPolicy = new GuestPolicy(browser, context);
         await guestPolicy.initModPage(page);
         await guestPolicy.alwaysDeny();
@@ -158,7 +158,6 @@ test.describe.parallel('User', () => {
       test('Lock Share webcam', async ({ browser, context, page }) => {
         const lockViewers = new LockViewers(browser, context);
         await lockViewers.initPages(page);
-        await lockViewers.initUserPage2();
         await lockViewers.lockShareWebcam();
       });
 
@@ -166,7 +165,6 @@ test.describe.parallel('User', () => {
       test('Lock See other viewers webcams', async ({ browser, context, page }) => {
         const lockViewers = new LockViewers(browser, context);
         await lockViewers.initPages(page);
-        await lockViewers.initUserPage2();
         await lockViewers.lockSeeOtherViewersWebcams();
       });
 
@@ -174,7 +172,6 @@ test.describe.parallel('User', () => {
       test('Lock Share microphone', async ({ browser, context, page }) => {
         const lockViewers = new LockViewers(browser, context);
         await lockViewers.initPages(page);
-        await lockViewers.initUserPage2();
         await lockViewers.lockShareMicrophone();
       });
 
@@ -182,7 +179,6 @@ test.describe.parallel('User', () => {
       test('Lock Send public chat messages', async ({ browser, context, page }) => {
         const lockViewers = new LockViewers(browser, context);
         await lockViewers.initPages(page);
-        await lockViewers.initUserPage2();
         await lockViewers.lockSendPublicChatMessages();
       });
 
@@ -190,7 +186,6 @@ test.describe.parallel('User', () => {
       test('Lock Send private chat messages', async ({ browser, context, page }) => {
         const lockViewers = new LockViewers(browser, context);
         await lockViewers.initPages(page);
-        await lockViewers.initUserPage2();
         await lockViewers.lockSendPrivateChatMessages();
       });
 
@@ -205,16 +200,19 @@ test.describe.parallel('User', () => {
       test('Lock See other viewers in the Users list', async ({ browser, context, page }) => {
         const lockViewers = new LockViewers(browser, context);
         await lockViewers.initPages(page);
-        await lockViewers.initUserPage2();
         await lockViewers.lockSeeOtherViewersUserList();
       });
 
-      // https://docs.bigbluebutton.org/2.6/release-tests.html#unlock-a-specific-user
-      test('Unlock a user', async ({ browser, context, page }) => {
+      test('Lock see other viewers annotations', async ({ browser, context, page }) => {
         const lockViewers = new LockViewers(browser, context);
         await lockViewers.initPages(page);
-        await lockViewers.initUserPage2();
-        await lockViewers.unlockUser();
+        await lockViewers.lockSeeOtherViewersAnnotations();
+      });
+
+      test('Lock see other viewers cursor', async ({ browser, context, page }) => {
+        const lockViewers = new LockViewers(browser, context);
+        await lockViewers.initPages(page);
+        await lockViewers.lockSeeOtherViewersCursor();
       });
     });
 
@@ -280,6 +278,7 @@ test.describe.parallel('User', () => {
     });
 
     test('User List should not appear when Chat Panel or Whiteboard are active on mobile devices', async ({ browser }) => {
+      test.fixme();
       const iphoneContext = await browser.newContext({ ...iPhone11 });
       const motoContext = await browser.newContext({ ...motoG4 });
       const modPage = await iphoneContext.newPage();

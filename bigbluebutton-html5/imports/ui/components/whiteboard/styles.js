@@ -88,8 +88,12 @@ const TldrawGlobalStyle = createGlobalStyle`
         border: solid ${borderSize} ${colorWhite} !important;
       }
     }
+    [id="TD-Styles-Color-Container"],
+    [id="TD-StylesMenu"] {
+      filter: invert(0%) hue-rotate(180deg) contrast(100%) !important;
+    }
   `}
-  ${({ isPresenter }) => (!isPresenter) && `
+  ${({ isPresenter, hasWBAccess }) => (!isPresenter && !hasWBAccess) && `
     #presentationInnerWrapper div{
       cursor: default !important;
     }

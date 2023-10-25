@@ -7,11 +7,13 @@ import RandomUserSelectContainer from '/imports/ui/components/common/modal/rando
 import LayoutModalContainer from '/imports/ui/components/layout/modal/container';
 import BBBMenu from '/imports/ui/components/common/menu/component';
 import Styled from './styles';
+import TimerService from '/imports/ui/components/timer/service';
 import { colorPrimary } from '/imports/ui/stylesheets/styled-components/palette';
 import { PANELS, ACTIONS, LAYOUT_TYPE } from '../../layout/enums';
 import { uniqueId } from '/imports/utils/string-utils';
-import { isPresentationEnabled } from '/imports/ui/services/features';
-import {isLayoutsEnabled} from '/imports/ui/services/features';
+import { isPresentationEnabled, isLayoutsEnabled } from '/imports/ui/services/features';
+import VideoPreviewContainer from '/imports/ui/components/video-preview/container';
+import { screenshareHasEnded } from '/imports/ui/components/screenshare/service';
 
 const propTypes = {
   amIPresenter: PropTypes.bool.isRequired,
@@ -21,12 +23,16 @@ const propTypes = {
   amIModerator: PropTypes.bool.isRequired,
   shortcuts: PropTypes.string,
   handleTakePresenter: PropTypes.func.isRequired,
+  isTimerActive: PropTypes.bool.isRequired,
+  isTimerEnabled: PropTypes.bool.isRequired,
   allowExternalVideo: PropTypes.bool.isRequired,
   stopExternalVideoShare: PropTypes.func.isRequired,
   isMobile: PropTypes.bool.isRequired,
   setMeetingLayout: PropTypes.func.isRequired,
   setPushLayout: PropTypes.func.isRequired,
   showPushLayout: PropTypes.bool.isRequired,
+  isTimerFeatureEnabled: PropTypes.bool.isRequired,
+  isCameraAsContentEnabled: PropTypes.bool.isRequired,
 };
 
 const defaultProps = {
@@ -38,6 +44,14 @@ const intlMessages = defineMessages({
   actionsLabel: {
     id: 'app.actionsBar.actionsDropdown.actionsLabel',
     description: 'Actions button label',
+  },
+  activateTimerStopwatchLabel: {
+    id: 'app.actionsBar.actionsDropdown.activateTimerStopwatchLabel',
+    description: 'Activate timer/stopwatch label',
+  },
+  deactivateTimerStopwatchLabel: {
+    id: 'app.actionsBar.actionsDropdown.deactivateTimerStopwatchLabel',
+    description: 'Deactivate timer/stopwatch label',
   },
   presentationLabel: {
     id: 'app.actionsBar.actionsDropdown.presentationLabel',
@@ -87,13 +101,17 @@ const intlMessages = defineMessages({
     id: 'app.actionsBar.actionsDropdown.selectRandUserDesc',
     description: 'Description for select random user option',
   },
-  propagateLayoutLabel: {
-    id: 'app.actionsBar.actionsDropdown.propagateLayoutLabel',
-    description: 'Label for propagate layout button',
-  },
   layoutModal: {
     id: 'app.actionsBar.actionsDropdown.layoutModal',
     description: 'Label for layouts selection button',
+  },
+  shareCameraAsContent: {
+    id: 'app.actionsBar.actionsDropdown.shareCameraAsContent',
+    description: 'Label for share camera as content',
+  },
+  unshareCameraAsContent: {
+    id: 'app.actionsBar.actionsDropdown.unshareCameraAsContent',
+    description: 'Label for unshare camera as content',
   },
 });
 
@@ -106,18 +124,24 @@ class ActionsDropdown extends PureComponent {
     this.presentationItemId = uniqueId('action-item-');
     this.pollId = uniqueId('action-item-');
     this.takePresenterId = uniqueId('action-item-');
+    this.timerId = uniqueId('action-item-');
     this.selectUserRandId = uniqueId('action-item-');
     this.state = {
       isExternalVideoModalOpen: false,
       isRandomUserSelectModalOpen: false,
-      isLayoutModalOpen: false, 
-    }
+      isLayoutModalOpen: false,
+      isCameraAsContentModalOpen: false,
+    };
 
     this.handleExternalVideoClick = this.handleExternalVideoClick.bind(this);
     this.makePresentationItems = this.makePresentationItems.bind(this);
     this.setExternalVideoModalIsOpen = this.setExternalVideoModalIsOpen.bind(this);
     this.setRandomUserSelectModalIsOpen = this.setRandomUserSelectModalIsOpen.bind(this);
     this.setLayoutModalIsOpen = this.setLayoutModalIsOpen.bind(this);
+    this.setCameraAsContentModalIsOpen = this.setCameraAsContentModalIsOpen.bind(this);
+    this.setPropsToPassModal = this.setPropsToPassModal.bind(this);
+    this.setForceOpen = this.setForceOpen.bind(this);
+    this.handleTimerClick = this.handleTimerClick.bind(this);
   }
 
   componentDidUpdate(prevProps) {
@@ -132,6 +156,15 @@ class ActionsDropdown extends PureComponent {
     this.setExternalVideoModalIsOpen(true);
   }
 
+  handleTimerClick() {
+    const { isTimerActive, layoutContextDispatch } = this.props;
+    if (!isTimerActive) {
+      TimerService.activateTimer(layoutContextDispatch);
+    } else {
+      TimerService.deactivateTimer();
+    }
+  }
+
   getAvailableActions() {
     const {
       intl,
@@ -142,40 +175,40 @@ class ActionsDropdown extends PureComponent {
       isPollingEnabled,
       isSelectRandomUserEnabled,
       stopExternalVideoShare,
+      isTimerActive,
+      isTimerEnabled,
       layoutContextDispatch,
       setMeetingLayout,
       setPushLayout,
       showPushLayout,
       amIModerator,
+      isMobile,
+      hasCameraAsContent,
+      isCameraAsContentEnabled,
+      isTimerFeatureEnabled,
     } = this.props;
 
-    const {
-      pollBtnLabel,
-      presentationLabel,
-      takePresenter,
-    } = intlMessages;
+    const { pollBtnLabel, presentationLabel, takePresenter } = intlMessages;
 
-    const {
-      formatMessage,
-    } = intl;
+    const { formatMessage } = intl;
 
     const actions = [];
 
     if (amIPresenter && isPresentationEnabled()) {
       actions.push({
-        icon: "upload",
-        dataTest: "managePresentations",
+        icon: 'upload',
+        dataTest: 'managePresentations',
         label: formatMessage(presentationLabel),
         key: this.presentationItemId,
         onClick: handlePresentationClick,
         dividerTop: this.props?.presentations?.length > 1 ? true : false,
-      })
+      });
     }
 
     if (amIPresenter && isPollingEnabled) {
       actions.push({
-        icon: "polling",
-        dataTest: "polling",
+        icon: 'polling',
+        dataTest: 'polling',
         label: formatMessage(pollBtnLabel),
         key: this.pollId,
         onClick: () => {
@@ -192,12 +225,12 @@ class ActionsDropdown extends PureComponent {
           });
           Session.set('forcePollOpen', true);
         },
-      })
+      });
     }
 
     if (!amIPresenter && amIModerator) {
       actions.push({
-        icon: "presentation",
+        icon: 'presentation',
         label: formatMessage(takePresenter),
         key: this.takePresenterId,
         onClick: () => handleTakePresenter(),
@@ -206,45 +239,64 @@ class ActionsDropdown extends PureComponent {
 
     if (amIPresenter && allowExternalVideo) {
       actions.push({
-        icon: !isSharingVideo ? "external-video" : "external-video_off",
-        label: !isSharingVideo ? intl.formatMessage(intlMessages.startExternalVideoLabel)
+        icon: !isSharingVideo ? 'external-video' : 'external-video_off',
+        label: !isSharingVideo
+          ? intl.formatMessage(intlMessages.startExternalVideoLabel)
           : intl.formatMessage(intlMessages.stopExternalVideoLabel),
-        key: "external-video",
+        key: 'external-video',
         onClick: isSharingVideo ? stopExternalVideoShare : this.handleExternalVideoClick,
-        dataTest: "shareExternalVideo",
-      })
+        dataTest: 'shareExternalVideo',
+      });
     }
 
     if (amIPresenter && isSelectRandomUserEnabled) {
       actions.push({
-        icon: "user",
+        icon: 'user',
         label: intl.formatMessage(intlMessages.selectRandUserLabel),
         key: this.selectUserRandId,
         onClick: () => this.setRandomUserSelectModalIsOpen(true),
-        dataTest: "selectRandomUser",
-      })
-    }
-
-    if (amIPresenter && showPushLayout && isLayoutsEnabled()) {
-      actions.push({
-        icon: 'send',
-        label: intl.formatMessage(intlMessages.propagateLayoutLabel),
-        key: 'propagate layout',
-        onClick: amIPresenter ? setMeetingLayout : setPushLayout,
-        dataTest: 'propagateLayout',
+        dataTest: 'selectRandomUser',
       });
     }
 
-    if (isLayoutsEnabled()){
+    if (amIModerator && isTimerEnabled && isTimerFeatureEnabled) {
       actions.push({
-        icon: 'send',
+        icon: 'time',
+        label: isTimerActive
+          ? intl.formatMessage(intlMessages.deactivateTimerStopwatchLabel)
+          : intl.formatMessage(intlMessages.activateTimerStopwatchLabel),
+        key: this.timerId,
+        onClick: () => this.handleTimerClick(),
+      });
+    }
+
+    if (isLayoutsEnabled()) {
+      actions.push({
+        icon: 'manage_layout',
         label: intl.formatMessage(intlMessages.layoutModal),
         key: 'layoutModal',
         onClick: () => this.setLayoutModalIsOpen(true),
-        dataTest: 'layoutModal',
+        dataTest: 'manageLayoutBtn',
       });
     }
-    
+
+    if (isCameraAsContentEnabled && amIPresenter) {
+      actions.push({
+        icon: hasCameraAsContent ? 'video_off' : 'video',
+        label: hasCameraAsContent
+          ? intl.formatMessage(intlMessages.unshareCameraAsContent)
+          : intl.formatMessage(intlMessages.shareCameraAsContent),
+        key: 'camera as content',
+        onClick: hasCameraAsContent
+          ? screenshareHasEnded
+          : () => {
+              screenshareHasEnded();
+              this.setCameraAsContentModalIsOpen(true);
+            },
+        dataTest: 'shareCameraAsContent',
+      });
+    }
+
     return actions;
   }
 
@@ -253,6 +305,7 @@ class ActionsDropdown extends PureComponent {
       presentations,
       setPresentation,
       podIds,
+      setPresentationFitToWidth,
     } = this.props;
 
     if (!podIds || podIds.length < 1) return [];
@@ -262,7 +315,7 @@ class ActionsDropdown extends PureComponent {
     const { podId } = podIds[0];
 
     const presentationItemElements = presentations
-      .sort((a, b) => (a.name.localeCompare(b.name)))
+      .sort((a, b) => a.name.localeCompare(b.name))
       .map((p) => {
         const customStyles = { color: colorPrimary };
 
@@ -276,34 +329,49 @@ class ActionsDropdown extends PureComponent {
             description: "uploaded presentation file",
             key: `uploaded-presentation-${p.id}`,
             onClick: () => {
+              setPresentationFitToWidth(false);
               setPresentation(p.id, podId);
             },
           }
         );
       });
-
     return presentationItemElements;
   }
 
   setExternalVideoModalIsOpen(value) {
-    this.setState({isExternalVideoModalOpen: value});
+    this.setState({ isExternalVideoModalOpen: value });
   }
+
   setRandomUserSelectModalIsOpen(value) {
-    this.setState({isRandomUserSelectModalOpen: value});
+    this.setState({ isRandomUserSelectModalOpen: value });
   }
+
   setLayoutModalIsOpen(value) {
-    this.setState({isLayoutModalOpen: value});
+    this.setState({ isLayoutModalOpen: value });
+  }
+
+  setCameraAsContentModalIsOpen(value) {
+    this.setState({ isCameraAsContentModalOpen: value });
+  }
+
+  setPropsToPassModal(value) {
+    this.setState({ propsToPassModal: value });
+  }
+  setForceOpen(value) {
+    this.setState({ forceOpen: value });
   }
 
   renderModal(isOpen, setIsOpen, priority, Component) {
-    return isOpen ? <Component 
-      {...{
-        onRequestClose: () => setIsOpen(false),
-        priority,
-        setIsOpen,
-        isOpen
-      }}
-    /> : null
+    return isOpen ? (
+      <Component
+        {...{
+          onRequestClose: () => setIsOpen(false),
+          priority,
+          setIsOpen,
+          isOpen,
+        }}
+      />
+    ) : null;
   }
 
   render() {
@@ -316,20 +384,25 @@ class ActionsDropdown extends PureComponent {
       isMobile,
       isRTL,
       isSelectRandomUserEnabled,
+      propsToPassModal,
     } = this.props;
 
-    const { isExternalVideoModalOpen, 
-            isRandomUserSelectModalOpen, isLayoutModalOpen } = this.state;
+    const {
+      isExternalVideoModalOpen,
+      isRandomUserSelectModalOpen,
+      isLayoutModalOpen,
+      isCameraAsContentModalOpen,
+    } = this.state;
 
     const availableActions = this.getAvailableActions();
     const availablePresentations = this.makePresentationItems();
     const children = availablePresentations.length > 1 && amIPresenter
-      ? availablePresentations.concat(availableActions) : availableActions;
+      ? availablePresentations.concat(availableActions)
+      : availableActions;
 
     const customStyles = { top: '-1rem' };
 
-    if (availableActions.length === 0
-      || !isMeteorConnected) {
+    if (availableActions.length === 0 || !isMeteorConnected) {
       return null;
     }
 
@@ -338,7 +411,7 @@ class ActionsDropdown extends PureComponent {
         <BBBMenu
           customStyles={!isMobile ? customStyles : null}
           accessKey={OPEN_ACTIONS_AK}
-          trigger={
+          trigger={(
             <Styled.HideDropdownButton
               open={isDropdownOpen}
               hideLabel
@@ -351,25 +424,60 @@ class ActionsDropdown extends PureComponent {
               circle
               onClick={() => null}
             />
-          }
+          )}
           actions={children}
           opts={{
-            id: "actions-dropdown-menu",
+            id: 'actions-dropdown-menu',
             keepMounted: true,
             transitionDuration: 0,
             elevation: 3,
             getcontentanchorel: null,
-            fullwidth: "true",
+            fullwidth: 'true',
             anchorOrigin: { vertical: 'top', horizontal: isRTL ? 'right' : 'left' },
             transformOrigin: { vertical: 'bottom', horizontal: isRTL ? 'right' : 'left' },
           }}
         />
-        {this.renderModal(isExternalVideoModalOpen, this.setExternalVideoModalIsOpen, "low",
-          ExternalVideoModal)}
-        {(amIPresenter && isSelectRandomUserEnabled) ? this.renderModal(isRandomUserSelectModalOpen, this.setRandomUserSelectModalIsOpen, 
-          "low", RandomUserSelectContainer) : null }
-        {this.renderModal(isLayoutModalOpen, this.setLayoutModalIsOpen, 
-          "low", LayoutModalContainer)}
+        {this.renderModal(
+          isExternalVideoModalOpen,
+          this.setExternalVideoModalIsOpen,
+          'low',
+          ExternalVideoModal,
+        )}
+        {amIPresenter && isSelectRandomUserEnabled
+          ? this.renderModal(
+            isRandomUserSelectModalOpen,
+            this.setRandomUserSelectModalIsOpen,
+            'low',
+            RandomUserSelectContainer,
+          )
+          : null}
+        {this.renderModal(
+          isLayoutModalOpen,
+          this.setLayoutModalIsOpen,
+          'low',
+          LayoutModalContainer,
+        )}
+        {this.renderModal(
+          isCameraAsContentModalOpen,
+          this.setCameraAsContentModalIsOpen,
+          'low',
+          () => (
+            <VideoPreviewContainer
+              cameraAsContent
+              amIPresenter
+              {...{
+                callbackToClose: () => {
+                  this.setPropsToPassModal({});
+                  this.setForceOpen(false);
+                },
+                priority: 'low',
+                setIsOpen: this.setCameraAsContentModalIsOpen,
+                isOpen: isCameraAsContentModalOpen,
+              }}
+              {...propsToPassModal}
+            />
+          )
+        )}
       </>
     );
   }

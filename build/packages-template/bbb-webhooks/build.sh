@@ -26,7 +26,7 @@ find -maxdepth 1 ! -path . ! -name staging $(printf "! -name %s " $(cat .build-f
 
 pushd .
 cd staging/usr/local/bigbluebutton/bbb-webhooks/
-npm install --production
+npm install --unsafe-perm --production
 popd
 
 cp webhooks.nginx staging/usr/share/bigbluebutton/nginx/webhooks.nginx
@@ -46,4 +46,5 @@ fpm -s dir -C ./staging -n $PACKAGE                 \
     --description "BigBlueButton Webhooks"          \
     $DIRECTORIES                                    \
     $OPTS                                           \
-    -d 'yq (>= 3)' -d 'yq (<< 4)'
+    -d 'yq (>= 3)' -d 'yq (<< 4)' \
+    -d 'nodejs (>= 18)' -d 'nodejs (<< 20)'

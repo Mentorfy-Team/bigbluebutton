@@ -28,7 +28,6 @@ const ROLE_MODERATOR = Meteor.settings.public.user.role_moderator;
 import {
   getFontSize,
   getBreakoutRooms,
-  validIOSVersion,
 } from './service';
 
 import App from './component';
@@ -70,6 +69,7 @@ const AppContainer = (props) => {
     meetingLayoutCameraPosition,
     meetingLayoutFocusedCamera,
     meetingLayoutVideoRate,
+    isSharedNotesPinned,
     ...otherProps
   } = props;
 
@@ -93,14 +93,17 @@ const AppContainer = (props) => {
 
   const { focusedId } = cameraDock;
 
-  if(
-    layoutContextDispatch 
-    &&  (typeof meetingLayout != "undefined")
-    && (layoutType.current != meetingLayout)
+  useEffect(() => {
+    if (
+      layoutContextDispatch
+      && (typeof meetingLayout !== 'undefined')
+      && (layoutType.current !== meetingLayout)
+      && isSharedNotesPinned
     ) {
       layoutType.current = meetingLayout;
       MediaService.setPresentationIsOpen(layoutContextDispatch, true);
-  }
+    }
+  }, [meetingLayout, layoutContextDispatch, layoutType]);
 
   const horizontalPosition = cameraDock.position === 'contentLeft' || cameraDock.position === 'contentRight';
   // this is not exactly right yet
@@ -141,8 +144,9 @@ const AppContainer = (props) => {
   };
 
   useEffect(() => {
-    MediaService.buildLayoutWhenPresentationAreaIsDisabled(layoutContextDispatch)});
-  
+    MediaService.buildLayoutWhenPresentationAreaIsDisabled(layoutContextDispatch)
+  });
+
   return currentUserId
     ? (
       <App
@@ -227,7 +231,7 @@ export default withTracker(() => {
     {
       fields:
       {
-        approved: 1, emoji: 1, userId: 1, presenter: 1, role: 1,
+        approved: 1, emoji: 1, raiseHand: 1, away: 1, userId: 1, presenter: 1, role: 1,
       },
     },
   );
@@ -286,10 +290,11 @@ export default withTracker(() => {
     customStyleUrl,
     UserInfo,
     notify,
-    validIOSVersion,
     isPhone: deviceInfo.isPhone,
     isRTL: document.documentElement.getAttribute('dir') === 'rtl',
     currentUserEmoji: currentUserEmoji(currentUser),
+    currentUserAway: currentUser.away,
+    currentUserRaiseHand: currentUser.raiseHand,
     randomlySelectedUser,
     currentUserId: currentUser?.userId,
     isPresenter,
@@ -319,5 +324,6 @@ export default withTracker(() => {
     hidePresentationOnJoin: getFromUserSettings('bbb_hide_presentation_on_join', LAYOUT_CONFIG.hidePresentationOnJoin),
     hideActionsBar: getFromUserSettings('bbb_hide_actions_bar', false),
     ignorePollNotifications: Session.get('ignorePollNotifications'),
+    isSharedNotesPinned: MediaService.shouldShowSharedNotes(),
   };
 })(AppContainer);

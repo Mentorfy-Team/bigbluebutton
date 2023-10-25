@@ -13,8 +13,6 @@ import SubscriptionRegistry, { subscriptionReactivity } from '../../services/sub
 import { isChatEnabled } from '/imports/ui/services/features';
 
 const CHAT_CONFIG = Meteor.settings.public.chat;
-const PUBLIC_GROUP_CHAT_ID = CHAT_CONFIG.public_group_id;
-const PUBLIC_CHAT_TYPE = CHAT_CONFIG.type_public;
 const TYPING_INDICATOR_ENABLED = CHAT_CONFIG.typingIndicator.enabled;
 const SUBSCRIPTIONS = [
   'users', 'meetings', 'polls', 'presentations', 'slides', 'slide-positions', 'captions',
@@ -23,7 +21,7 @@ const SUBSCRIPTIONS = [
   'local-settings', 'users-typing', 'record-meetings', 'video-streams',
   'connection-status', 'voice-call-states', 'external-video-meetings', 'breakouts', 'breakouts-history',
   'pads', 'pads-sessions', 'pads-updates', 'notifications', 'audio-captions',
-  'layout-meetings',
+  'layout-meetings', 'user-reaction', 'timer',
 ];
 const {
   localBreakoutsSync,
@@ -131,22 +129,11 @@ export default withTracker(() => {
   let groupChatMessageHandler = {};
 
   if (isChatEnabled() && ready) {
-    const chatsCount = GroupChat.find({
-      $or: [
-        {
-          meetingId,
-          access: PUBLIC_CHAT_TYPE,
-          chatId: { $ne: PUBLIC_GROUP_CHAT_ID },
-        },
-        { meetingId, users: { $all: [requesterUserId] } },
-      ],
-    }).count();
-
     const subHandler = {
       ...subscriptionErrorHandler,
     };
 
-    groupChatMessageHandler = Meteor.subscribe('group-chat-msg', chatsCount, subHandler);
+    groupChatMessageHandler = Meteor.subscribe('group-chat-msg', subHandler);
   }
 
   // TODO: Refactor all the late subscribers
