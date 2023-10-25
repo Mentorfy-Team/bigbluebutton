@@ -1,56 +1,51 @@
 const { test } = require('@playwright/test');
-const { MultiUsers } = require('../user/multiusers');
+const { fullyParallel } = require('../playwright.config');
 const { Audio } = require('./audio');
 
-test.describe.parallel('Audio', () => {
+if (!fullyParallel) test.describe.configure({ mode: 'serial' });
+
+test.describe('Audio', () => {
+  const audio = new Audio();
+
+  test.beforeAll(async ({ browser }) => {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    await audio.initModPage(page, true);
+    await audio.initUserPage(true, context);
+  });
+
   // https://docs.bigbluebutton.org/2.6/release-tests.html#listen-only-mode-automated
-  test('Join audio with Listen Only @ci', async ({ browser, page }) => {
-    const audio = new Audio(browser, page);
-    await audio.init(true, false);
+  test('Join audio with Listen Only @ci', async () => {
     await audio.joinAudio();
   });
 
   // https://docs.bigbluebutton.org/2.6/release-tests.html#join-audio-automated
-  test('Join audio with Microphone @ci', async ({ browser, page }) => {
-    const audio = new Audio(browser, page);
-    await audio.init(true, false);
+  test('Join audio with Microphone @ci', async () => {
     await audio.joinMicrophone();
   });
 
+  test('Change audio input and keep it connected', async () => {
+    await audio.changeAudioInput();
+  });
+
   // https://docs.bigbluebutton.org/2.6/release-tests.html#muteunmute
-  test('Mute yourself by clicking the mute button @ci', async ({ browser, page }) => {
-    const audio = new Audio(browser, page);
-    await audio.init(true, false);
+  test('Mute yourself by clicking the mute button', async () => {
     await audio.muteYourselfByButton();
   });
 
   // https://docs.bigbluebutton.org/2.6/release-tests.html#choosing-different-sources
-  test('Change audio input and keep it connected', async ({ browser, page }) => {
-    const audio = new Audio(browser, page);
-    await audio.init(true, false);
-    await audio.changeAudioInput();
-  });
-
-  test('Keep the last mute state after rejoining audio @ci', async ({ browser, page }) => {
-    const audio = new Audio(browser, page);
-    await audio.init(true, false);
+  test('Keep the last mute state after rejoining audio @ci', async () => {
     await audio.keepMuteStateOnRejoin();
   });
 
-  test.describe.parallel('Talking indicator @ci', () => {
-    // https://docs.bigbluebutton.org/2.6/release-tests.html#talking-indicator
-    test('Mute yourself by clicking the talking indicator', async ({ browser, page }) => {
-      const audio = new Audio(browser, page);
-      await audio.init(true, false);
-      await audio.muteYourselfByTalkingIndicator();
-    });
+  // Talking Indicator
+  // https://docs.bigbluebutton.org/2.6/release-tests.html#talking-indicator
+  test('Mute yourself by clicking the talking indicator', async () => {
+    await audio.muteYourselfByTalkingIndicator();
+  });
 
-    // https://docs.bigbluebutton.org/2.6/release-tests.html#talking-indicator
-    test('Mute another user by clicking the talking indicator', async ({ browser, context, page }) => {
-      const audio = new MultiUsers(browser, context);
-      await audio.initModPage(page);
-      await audio.initUserPage(false);
-      await audio.muteAnotherUser();
-    });
+  // https://docs.bigbluebutton.org/2.6/release-tests.html#talking-indicator
+  test('Mute another user by clicking the talking indicator', async () => {
+    await audio.muteAnotherUser();
   });
 });

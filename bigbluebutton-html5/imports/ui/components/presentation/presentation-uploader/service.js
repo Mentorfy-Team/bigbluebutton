@@ -56,6 +56,8 @@ const getPresentations = () => Presentations
       id,
       name,
       exportation,
+      filenameConverted,
+      downloadableExtension,
     } = presentation;
 
     const uploadTimestamp = id.split('-').pop();
@@ -72,11 +74,13 @@ const getPresentations = () => Presentations
       conversion: conversion || { done: true, error: false },
       uploadTimestamp,
       exportation: exportation || { error: false },
+      filenameConverted,
+      downloadableExtension,
     };
   });
 
-const dispatchTogglePresentationDownloadable = (presentation, newState) => {
-  makeCall('setPresentationDownloadable', presentation.id, newState);
+const dispatchChangePresentationDownloadable = (presentation, newState, fileStateType) => {
+  makeCall('setPresentationDownloadable', presentation.id, newState, fileStateType);
 };
 
 const observePresentationConversion = (
@@ -109,7 +113,7 @@ const observePresentationConversion = (
         if (doc.temporaryPresentationId !== temporaryPresentationId && doc.id !== tokenId) return;
 
         if (doc.conversion.status === 'FILE_TOO_LARGE' || doc.conversion.status === 'UNSUPPORTED_DOCUMENT'
-          || doc.conversion.status === 'CONVERSION_TIMEOUT' || doc.conversion.status === 'IVALID_MIME_TYPE') {
+          || doc.conversion.status === 'CONVERSION_TIMEOUT' || doc.conversion.status === 'INVALID_MIME_TYPE') {
           Presentations.update(
             { id: tokenId }, { $set: { temporaryPresentationId, renderedInToast: false } },
           );
@@ -378,14 +382,14 @@ const getExternalUploadData = () => {
   };
 };
 
-const exportPresentationToChat = (presentationId, observer) => {
+const exportPresentation = (presentationId, observer, fileStateType) => {
   let lastStatus = {};
 
   Tracker.autorun((c) => {
     const cursor = Presentations.find({ id: presentationId });
 
     const checkStatus = (exportation) => {
-      const shouldStop = lastStatus.status === 'RUNNING' && exportation.status === 'EXPORTED';
+      const shouldStop = ['RUNNING', 'PROCESSING'].includes(lastStatus.status) && exportation.status === 'EXPORTED';
 
       if (shouldStop) {
         observer(exportation, true);
@@ -407,7 +411,7 @@ const exportPresentationToChat = (presentationId, observer) => {
     });
   });
 
-  makeCall('exportPresentationToChat', presentationId);
+  makeCall('exportPresentation', presentationId, fileStateType);
 };
 
 function handleFiledrop(files, files2, that, intl, intlMessages) {
@@ -483,11 +487,11 @@ export default {
   handleSavePresentation,
   getPresentations,
   persistPresentationChanges,
-  dispatchTogglePresentationDownloadable,
+  dispatchChangePresentationDownloadable,
   setPresentation,
   requestPresentationUploadToken,
   getExternalUploadData,
-  exportPresentationToChat,
+  exportPresentation,
   uploadAndConvertPresentation,
   handleFiledrop,
 };

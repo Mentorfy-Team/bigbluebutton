@@ -6,6 +6,7 @@ import ActionsDropdown from './actions-dropdown/container';
 import AudioCaptionsButtonContainer from '/imports/ui/components/audio/captions/button/container';
 import CaptionsReaderMenuContainer from '/imports/ui/components/captions/reader-menu/container';
 import ScreenshareButtonContainer from '/imports/ui/components/actions-bar/screenshare/container';
+import ReactionsButtonContainer from './reactions-button/container';
 import AudioControlsContainer from '../audio/audio-controls/container';
 import JoinVideoOptionsContainer from '../video-provider/video-button/container';
 import PresentationOptionsContainer from './presentation-options/component';
@@ -21,10 +22,28 @@ class ActionsBar extends PureComponent {
     };
 
     this.setCaptionsReaderMenuModalIsOpen = this.setCaptionsReaderMenuModalIsOpen.bind(this);
+    this.setRenderRaiseHand = this.renderRaiseHand.bind(this);
+    this.actionsBarRef = React.createRef();
   }
 
   setCaptionsReaderMenuModalIsOpen(value) {
     this.setState({ isCaptionsReaderMenuModalOpen: value })
+  }
+
+  renderRaiseHand() {
+    const {
+      isReactionsButtonEnabled, isRaiseHandButtonEnabled, setEmojiStatus, currentUser, intl,
+    } = this.props;
+
+    return (<>
+      {isReactionsButtonEnabled ?
+        <>
+          <Styled.Separator />
+          <ReactionsButtonContainer actionsBarRef={this.actionsBarRef} />
+        </> :
+        isRaiseHandButtonEnabled ? <RaiseHandDropdownContainer {...{ setEmojiStatus, currentUser, intl }} />
+          : null}
+    </>);
   }
 
   render() {
@@ -39,21 +58,24 @@ class ActionsBar extends PureComponent {
       isSharingVideo,
       isSharedNotesPinned,
       hasScreenshare,
+      hasGenericContent,
+      hasCameraAsContent,
       stopExternalVideoShare,
+      isTimerActive,
+      isTimerEnabled,
       isCaptionsAvailable,
       isMeteorConnected,
       isPollingEnabled,
       isSelectRandomUserEnabled,
-      isRaiseHandButtonEnabled,
+      isRaiseHandButtonCentered,
       isThereCurrentPresentation,
       allowExternalVideo,
-      setEmojiStatus,
-      currentUser,
       layoutContextDispatch,
       actionsBarStyle,
       setMeetingLayout,
       showPushLayout,
       setPushLayout,
+      setPresentationFitToWidth,
     } = this.props;
 
     const { isCaptionsReaderMenuModalOpen } = this.state;
@@ -62,6 +84,7 @@ class ActionsBar extends PureComponent {
       || isSharingVideo || hasScreenshare || isSharedNotesPinned;
     return (
       <Styled.ActionsBar
+        ref={this.actionsBarRef}
         style={
           {
             height: actionsBarStyle.innerHeight,
@@ -79,17 +102,21 @@ class ActionsBar extends PureComponent {
             intl,
             isSharingVideo,
             stopExternalVideoShare,
+            isTimerActive,
+            isTimerEnabled,
             isMeteorConnected,
             setMeetingLayout,
             setPushLayout,
             presentationIsOpen,
             showPushLayout,
+            hasCameraAsContent,
+            setPresentationFitToWidth,
           }}
           />
           {isCaptionsAvailable
             ? (
               <>
-                <CaptionsButtonContainer {...{ intl, 
+                <CaptionsButtonContainer {...{ intl,
                   setIsOpen: this.setCaptionsReaderMenuModalIsOpen,}} />
                 {
                   isCaptionsReaderMenuModalOpen ? <CaptionsReaderMenuContainer
@@ -122,6 +149,7 @@ class ActionsBar extends PureComponent {
             isMeteorConnected,
           }}
           />
+        {isRaiseHandButtonCentered && this.renderRaiseHand()}
         </Styled.Center>
         <Styled.Right>
           { shouldShowOptionsButton ?
@@ -133,19 +161,12 @@ class ActionsBar extends PureComponent {
               hasExternalVideo={isSharingVideo}
               hasScreenshare={hasScreenshare}
               hasPinnedSharedNotes={isSharedNotesPinned}
+              hasGenericContent={hasGenericContent}
+              hasCameraAsContent={hasCameraAsContent}
             />
             : null
           }
-          {isRaiseHandButtonEnabled
-            ? (
-              <RaiseHandDropdownContainer {...{
-                setEmojiStatus,
-                currentUser,
-                intl,
-              }
-              }
-              />
-            ) : null}
+          {!isRaiseHandButtonCentered && this.renderRaiseHand()}
         </Styled.Right>
       </Styled.ActionsBar>
     );

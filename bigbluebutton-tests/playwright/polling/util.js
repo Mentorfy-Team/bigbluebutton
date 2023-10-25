@@ -16,7 +16,7 @@ async function openPoll(testPage) {
 
 async function startPoll(test, shouldPublishPoll = false, isAnonymous = false) {
   await openPoll(test);
-  if (isAnonymous) await test.waitAndClickElement(e.anonymousPoll);
+  if (isAnonymous) await test.getLocator(e.anonymousPoll).setChecked();
   await test.waitAndClick(e.startPoll);
   if (shouldPublishPoll) await test.waitAndClick(e.publishPollingLabel);
 }

@@ -7,13 +7,16 @@ const PresentationArea = ({
   height,
   presentationIsOpen,
   darkTheme,
+  layoutType,
+  setPresentationFitToWidth,
+  fitToWidth,
 }) => {
   const presentationAreaSize = {
     presentationAreaWidth: width,
     presentationAreaHeight: height,
   };
   return (
-    <PresentationPodsContainer {...{ presentationAreaSize, presentationIsOpen, darkTheme }} />
+    <PresentationPodsContainer {...{ presentationAreaSize, presentationIsOpen, darkTheme, layoutType, setPresentationFitToWidth, fitToWidth }} />
   );
 };
 

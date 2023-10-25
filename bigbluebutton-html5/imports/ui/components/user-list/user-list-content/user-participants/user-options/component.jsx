@@ -21,7 +21,7 @@ const propTypes = {
   toggleMuteAllUsers: PropTypes.func.isRequired,
   toggleMuteAllUsersExceptPresenter: PropTypes.func.isRequired,
   toggleStatus: PropTypes.func.isRequired,
-  users: PropTypes.arrayOf(Object).isRequired,
+  toggleReactions: PropTypes.func.isRequired,
   guestPolicy: PropTypes.string.isRequired,
   meetingIsBreakout: PropTypes.bool.isRequired,
   hasBreakoutRoom: PropTypes.bool.isRequired,
@@ -41,6 +41,14 @@ const intlMessages = defineMessages({
   clearAllDesc: {
     id: 'app.userList.userOptions.clearAllDesc',
     description: 'Clear all description',
+  },
+  clearAllReactionsLabel: {
+    id: 'app.userList.userOptions.clearAllReactionsLabel',
+    description: 'Clear all reactions label',
+  },
+  clearAllReactionsDesc: {
+    id: 'app.userList.userOptions.clearAllReactionsDesc',
+    description: 'Clear all reactions description',
   },
   muteAllLabel: {
     id: 'app.userList.userOptions.muteAllLabel',
@@ -128,11 +136,15 @@ const intlMessages = defineMessages({
   }
 });
 
+const USER_STATUS_ENABLED = Meteor.settings.public.userStatus.enabled;
+const USER_REACTION_ENABLED = Meteor.settings.public.userReaction.enabled;
+
 class UserOptions extends PureComponent {
   constructor(props) {
     super(props);
 
     this.clearStatusId = uniqueId('list-item-');
+    this.clearReactionId = uniqueId('list-item-');
     this.muteId = uniqueId('list-item-');
     this.muteAllId = uniqueId('list-item-');
     this.lockId = uniqueId('list-item-');
@@ -150,7 +162,6 @@ class UserOptions extends PureComponent {
     }
 
     this.handleCreateBreakoutRoomClick = this.handleCreateBreakoutRoomClick.bind(this);
-    this.handleCaptionsClick = this.handleCaptionsClick.bind(this);
     this.onCreateBreakouts = this.onCreateBreakouts.bind(this);
     this.onInvitationUsers = this.onInvitationUsers.bind(this);
     this.renderMenuItems = this.renderMenuItems.bind(this);
@@ -194,15 +205,12 @@ class UserOptions extends PureComponent {
     return this.setCreateBreakoutRoomModalIsOpen(true);
   }
 
-  handleCaptionsClick() {
-    this.setWriterMenuModalIsOpen(true);
-  }
-
   renderMenuItems() {
     const {
       intl,
       isMeetingMuted,
       toggleStatus,
+      toggleReactions,
       toggleMuteAllUsers,
       toggleMuteAllUsersExceptPresenter,
       meetingIsBreakout,
@@ -273,17 +281,31 @@ class UserOptions extends PureComponent {
           onClick: this.onSaveUserNames,
           icon: 'download',
           dataTest: 'downloadUserNamesList',
+          divider: !USER_STATUS_ENABLED,
         });
       }
 
-      this.menuItems.push({
-        key: this.clearStatusId,
-        label: intl.formatMessage(intlMessages.clearAllLabel),
-        description: intl.formatMessage(intlMessages.clearAllDesc),
-        onClick: toggleStatus,
-        icon: 'clear_status',
-        divider: true,
-      });
+      if (USER_STATUS_ENABLED) {
+        this.menuItems.push({
+          key: this.clearStatusId,
+          label: intl.formatMessage(intlMessages.clearAllLabel),
+          description: intl.formatMessage(intlMessages.clearAllDesc),
+          onClick: toggleStatus,
+          icon: 'clear_status',
+          divider: true,
+        });
+      }
+
+      if (USER_REACTION_ENABLED) {
+        this.menuItems.push({
+          key: this.clearReactionId,
+          label: intl.formatMessage(intlMessages.clearAllReactionsLabel),
+          description: intl.formatMessage(intlMessages.clearAllReactionsDesc),
+          onClick: toggleReactions,
+          icon: 'clear_status',
+          divider: true,
+        });
+      }
 
       if (canCreateBreakout) {
         this.menuItems.push({
@@ -302,7 +324,7 @@ class UserOptions extends PureComponent {
           label: intl.formatMessage(intlMessages.captionsLabel),
           description: intl.formatMessage(intlMessages.captionsDesc),
           key: this.captionsId,
-          onClick: this.handleCaptionsClick,
+          onClick: () => { this.setWriterMenuModalIsOpen(true); },
           dataTest: 'writeClosedCaptions',
         });
       }
@@ -326,7 +348,7 @@ class UserOptions extends PureComponent {
   }
 
   renderModal(isOpen, setIsOpen, priority, Component, otherOptions) {
-    return isOpen ? <Component 
+    return isOpen ? <Component
       {...{
         ...otherOptions,
         onRequestClose: () => setIsOpen(false),
@@ -342,7 +364,7 @@ class UserOptions extends PureComponent {
       isCreateBreakoutRoomModalOpen: value,
     })
   }
-  
+
   setGuestPolicyModalIsOpen(value) {
     this.setState({
       isGuestPolicyModalOpen: value,
@@ -352,7 +374,7 @@ class UserOptions extends PureComponent {
   setWriterMenuModalIsOpen(value) {
     this.setState({isWriterMenuModalOpen: value});
   }
-  
+
   setLockViewersModalIsOpen(value) {
     this.setState({isLockViewersModalOpen: value});
   }
@@ -390,13 +412,13 @@ class UserOptions extends PureComponent {
             transformOrigin: { vertical: 'top', horizontal: isRTL ? 'right' : 'left' },
           }}
         />
-        {this.renderModal(isCreateBreakoutRoomModalOpen, this.setCreateBreakoutRoomModalIsOpen, "medium", 
+        {this.renderModal(isCreateBreakoutRoomModalOpen, this.setCreateBreakoutRoomModalIsOpen, "medium",
           CreateBreakoutRoomContainer, {isBreakoutRecordable, isInvitation})}
-        {this.renderModal(isGuestPolicyModalOpen, this.setGuestPolicyModalIsOpen, "low", 
+        {this.renderModal(isGuestPolicyModalOpen, this.setGuestPolicyModalIsOpen, "low",
           GuestPolicyContainer)}
-        {this.renderModal(isWriterMenuModalOpen, this.setWriterMenuModalIsOpen, "low", 
+        {this.renderModal(isWriterMenuModalOpen, this.setWriterMenuModalIsOpen, "low",
           WriterMenuContainer)}
-        {this.renderModal(isLockViewersModalOpen, this.setLockViewersModalIsOpen, "low", 
+        {this.renderModal(isLockViewersModalOpen, this.setLockViewersModalIsOpen, "low",
           LockViewersContainer)}
       </>
     );

@@ -151,6 +151,14 @@ const messages = defineMessages({
     id: 'app.createBreakoutRoom.room',
     description: 'breakout room',
   },
+  awayLabel: {
+    id: 'app.userList.menu.away',
+    description: 'Text for identifying away user',
+  },
+  notAwayLabel: {
+    id: 'app.userList.menu.notAway',
+    description: 'Text for identifying not away user',
+  },
 });
 
 const propTypes = {
@@ -280,6 +288,7 @@ class UserListItem extends PureComponent {
       getGroupChatPrivate,
       getEmojiList,
       setEmojiStatus,
+      setUserAway,
       assignPresenter,
       removeUser,
       toggleVoice,
@@ -322,6 +331,7 @@ class UserListItem extends PureComponent {
       allowedToChangeUserLockStatus,
       allowedToChangeWhiteboardAccess,
       allowedToEjectCameras,
+      allowedToSetAway,
     } = actionPermissions;
 
     const { disablePrivateChat } = lockSettingsProps;
@@ -435,6 +445,7 @@ class UserListItem extends PureComponent {
           this.handleClose();
         },
         icon: 'unmute',
+        dataTest: 'unmuteUser'
       },
       {
         allowed: allowedToChangeWhiteboardAccess
@@ -537,6 +548,18 @@ class UserListItem extends PureComponent {
           this.handleClose();
         },
         icon: 'video_off',
+        dataTest: 'ejectCamera'
+      },
+      {
+        allowed: allowedToSetAway
+          && isMeteorConnected,
+        key: 'setAway',
+        label: intl.formatMessage(user.away ? messages.notAwayLabel : messages.awayLabel),
+        onClick: () => {
+          this.onActionsHide(setUserAway(user.userId, !user.away));
+          this.handleClose();
+        },
+        icon: 'time',
       },
     ];
 
@@ -606,20 +629,54 @@ class UserListItem extends PureComponent {
       breakoutSequence,
       meetingIsBreakout,
       voiceUser,
+      isReactionsEnabled,
     } = this.props;
+
+    const emojiProps = {
+      size: '1.3rem',
+    };
+
+    let userAvatarFiltered = user.avatar;
+
+    const emojiIcons = [
+      {
+        id: 'hand',
+        native: '✋',
+      },
+      {
+        id: 'clock7',
+        native: '⏰',
+      },
+    ];
+
+    const getIconUser = () => {
+      if (user.raiseHand === true) {
+        return isReactionsEnabled 
+          ? <em-emoji key={emojiIcons[0].id} native={emojiIcons[0].native}  emoji={emojiIcons[0]} {...emojiProps} />
+          : <Icon iconName={normalizeEmojiName('raiseHand')} />;
+      } if (user.away === true) {
+        return isReactionsEnabled 
+          ? <em-emoji key="away" native={emojiIcons[1].native} emoji={emojiIcons[1]} {...emojiProps} />
+          : <Icon iconName={normalizeEmojiName('away')} />;
+      } if (user.emoji !== 'none' && user.emoji !== 'notAway') {
+        return <Icon iconName={normalizeEmojiName(user.emoji)} />;
+      } if (user.reaction !== 'none') {
+        userAvatarFiltered = '';
+        return user.reaction;
+      } if (user.name) {
+        return user.name.toLowerCase().slice(0, 2);
+      } return '??';
+    };
 
     const { clientType } = user;
     const isVoiceOnly = clientType === 'dial-in-user';
 
-    const iconUser = user.emoji !== 'none'
-      ? (<Icon iconName={normalizeEmojiName(user.emoji)} />)
-      : user.name.toLowerCase().slice(0, 2);
-
+    const iconUser = getIconUser();
     const iconVoiceOnlyUser = (<Icon iconName="volume_level_2" />);
     const userIcon = isVoiceOnly ? iconVoiceOnlyUser : iconUser;
 
     return (
-      <UserAvatar
+      <Styled.UserAvatarComponent
         moderator={user.role === ROLE_MODERATOR}
         presenter={user.presenter}
         talking={voiceUser.isTalking}
@@ -630,14 +687,15 @@ class UserListItem extends PureComponent {
         color={user.color}
         whiteboardAccess={user.whiteboardAccess}
         emoji={user.emoji !== 'none'}
-        avatar={user.avatar}
+        hasReaction={user.reaction !== 'none'}
+        avatar={userAvatarFiltered}
       >
         {
           userInBreakout
             && !meetingIsBreakout
             ? breakoutSequence : userIcon
         }
-      </UserAvatar>
+      </Styled.UserAvatarComponent>
     );
   }
 
@@ -853,7 +911,7 @@ class UserListItem extends PureComponent {
           checkboxMessageId="app.userlist.menu.removeConfirmation.desc"
           confirmParam={user.userId}
           onConfirm={removeUser}
-          confirmButtonDataTest="removeUserConfirmation" 
+          confirmButtonDataTest="removeUserConfirmation"
           {...{
             onRequestClose: () => this.setConfirmationModalIsOpen(false),
             priority: "low",
