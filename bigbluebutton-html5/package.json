@@ -3,6 +3,7 @@
   "description": "BigBlueButton HTML5 Client",
   "license": "LGPL-3.0",
   "scripts": {
+    "deploy": "sudo systemctl stop bbb-html5 && meteor build --server-only /home/bigbluebutton/dev/bigbluebutton/bigbluebutton-html5/meteorbundle --allow-superuser && sudo tar -xzvf /home/bigbluebutton/dev/bigbluebutton/bigbluebutton-html5/meteorbundle/*.tar.gz -C /usr/share/meteor && sudo systemctl start bbb-html5",
     "start": "if test \"$NODE_ENV\" = \"production\" ; then npm run start:prod; else npm run start:dev; fi",
     "start:prod": "if test -z \"$ROOT_URL\" ; then export ROOT_URL=http://127.0.0.1/html5client; fi; meteor reset && meteor run --production --port=4100",
     "start:dev": "if test -z \"$ROOT_URL\" ; then export ROOT_URL=http://127.0.0.1/html5client; fi;meteor run --port=4100",
